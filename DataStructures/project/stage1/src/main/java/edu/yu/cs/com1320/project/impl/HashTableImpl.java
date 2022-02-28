@@ -1,5 +1,7 @@
-package edu.yu.cs.com1320.project;
+package edu.yu.cs.com1320.project.impl;
 
+
+import edu.yu.cs.com1320.project.HashTable;
 
 /**
  * 
@@ -7,7 +9,7 @@ package edu.yu.cs.com1320.project;
  * @param <Key>
  * @param <Value>
  */
-public class HashTableImpl<Key, Value> implements HashTable<Key, Value>{
+public class HashTableImpl<Key, Value> implements HashTable<Key, Value> {
     class Entry<Key, Value>{
         Key key;
         Value value;

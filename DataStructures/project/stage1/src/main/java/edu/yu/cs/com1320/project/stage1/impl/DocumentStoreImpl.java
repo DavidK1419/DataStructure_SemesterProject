@@ -1,7 +1,10 @@
-package edu.yu.cs.com1320.project.stage1;
+package edu.yu.cs.com1320.project.stage1.impl;
 
-import com.sun.jdi.Value;
-import edu.yu.cs.com1320.project.HashTableImpl; //not sure about this
+import edu.yu.cs.com1320.project.impl.HashTableImpl;
+import edu.yu.cs.com1320.project.stage1.Document;
+import edu.yu.cs.com1320.project.stage1.impl.DocumentImpl;
+import edu.yu.cs.com1320.project.stage1.DocumentStore;
+import edu.yu.cs.com1320.project.stage1.impl.DocumentStoreImpl;
 
 
 import java.io.IOException;
@@ -9,7 +12,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
-public class DocumentStoreImpl implements DocumentStore{
+public class DocumentStoreImpl implements DocumentStore {
     private HashTableImpl<URI, DocumentImpl> hashTableImpl = new HashTableImpl<URI, DocumentImpl>();
 
     /**

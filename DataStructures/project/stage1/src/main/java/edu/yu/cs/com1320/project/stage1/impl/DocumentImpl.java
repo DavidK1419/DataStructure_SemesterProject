@@ -1,9 +1,11 @@
-package edu.yu.cs.com1320.project.stage1;
+package edu.yu.cs.com1320.project.stage1.impl;
+
+import edu.yu.cs.com1320.project.stage1.Document;
 
 import java.net.URI;
 import java.util.Arrays;
 
-public class DocumentImpl implements Document{
+public class DocumentImpl implements Document {
     private final URI uri; //maybe keep final
     private String txt;
     private byte[] binaryData;

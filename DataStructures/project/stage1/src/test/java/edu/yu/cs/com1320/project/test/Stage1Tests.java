@@ -1,9 +1,8 @@
 package edu.yu.cs.com1320.project.test;
 
-import edu.yu.cs.com1320.project.HashTableImpl;
-import edu.yu.cs.com1320.project.stage1.DocumentImpl;
+import edu.yu.cs.com1320.project.impl.HashTableImpl;
 import edu.yu.cs.com1320.project.stage1.DocumentStore;
-import edu.yu.cs.com1320.project.stage1.DocumentStoreImpl;
+import edu.yu.cs.com1320.project.stage1.impl.DocumentStoreImpl;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -13,7 +12,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Stage1Tests {
 
