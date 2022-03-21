@@ -1,6 +1,5 @@
 package edu.yu.cs.com1320.project.impl;
 
-
 import edu.yu.cs.com1320.project.HashTable;
 
 /**
@@ -62,27 +61,29 @@ public class HashTableImpl<Key, Value> implements HashTable<Key, Value> {
      * @return if the key was already present in the HashTable, return the previous value stored for the key. If the key was not already present, return null.
      */
     public Value put(Key k, Value v){
+        boolean checkNull = false;
+        for(int i = 0; i < this.table.length; i++){
+            if(this.table[i] == null){
+                checkNull = true;
+            }
+        }
+        if(!checkNull){
+            doubleArray();
+        }
         int hashIndex = this.hashFunction(k);
         int index = getIndex(hashIndex);
         Entry currentIndex = this.table[index];
         Value oldValue = get(k);
         Entry backUpCounter = currentIndex;
-        //System.out.println("The key is: " + k + " And the value is: " + v + ". The old value is: " + oldValue + ". The new value is: ");
         if(this.table[index] == null){
             this.table[index] = new Entry(k, v);
-   //         System.out.println(get(k));
-
             return oldValue;
         }else {
             while (currentIndex != null) {
                 if (currentIndex.key.equals(k)) {
                     currentIndex.value = v;
-                    //System.out.println(get(k));
                     return oldValue;
                 }
-                /*if(!currentIndex.checkNullStat()){
-                    backUpCounter = currentIndex;
-                }*/
                 if (!currentIndex.checkNullStat()){
                     currentIndex = currentIndex.next;
                 }else{
@@ -91,9 +92,15 @@ public class HashTableImpl<Key, Value> implements HashTable<Key, Value> {
             }
             currentIndex.next = new Entry(k, v);
         }
-        //System.out.println(get(k));
-
         return oldValue;
+    }
+
+    private void doubleArray(){
+        Entry<Key, Value>[] newTable = new Entry[this.table.length*2];
+        for(int i = 0; i < table.length; i++){
+            newTable[(table[i].key.hashCode()) % 5] = table[i];
+        }
+        this.table = newTable;
     }
 
 
