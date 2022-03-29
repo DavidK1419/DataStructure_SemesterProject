@@ -88,7 +88,7 @@ public class DocumentStoreImpl implements DocumentStore {
      * @return the given document
      */
     public Document getDocument(URI uri){
-    	return this.hashTableImpl.get(uri);
+        return this.hashTableImpl.get(uri);
     }
 
     /**
@@ -99,9 +99,9 @@ public class DocumentStoreImpl implements DocumentStore {
         if(this.hashTableImpl.get(uri) == null){
             return false;
         }
-        Document delDoc = getDocument(uri);
+        Document delDoc = getDocument(uri);//might have to put a try block here
         this.hashTableImpl.put(uri, null);
-        Function<URI, Boolean> nullDoc = URI -> saveUndoDoc((DocumentImpl) delDoc, uri);
+        Function<URI, Boolean> nullDoc = URI -> saveUndoDoc((DocumentImpl) delDoc, uri);//I assume delDoc is null
         this.commandStack.push(new Command(uri, nullDoc));
         return true;
     }
@@ -112,7 +112,11 @@ public class DocumentStoreImpl implements DocumentStore {
      * @throws IllegalStateException if there are no actions to be undone, i.e. the command stack is empty
      */
     public void undo() throws IllegalStateException{
-        ((Command)this.commandStack.pop()).undo();
+        try {
+            ((Command) this.commandStack.pop()).undo(); //what's going on here???
+        }catch(NullPointerException e){
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -122,9 +126,12 @@ public class DocumentStoreImpl implements DocumentStore {
      */
     public void undo(URI uri) throws IllegalStateException{
         StackImpl backupStack = new StackImpl();
+        boolean checkIfStuffHappened = false;
         while(this.commandStack.size() > 0){
             if(((Command)this.commandStack.peek()).getUri().equals(uri)){
                 ((Command)this.commandStack.pop()).undo();
+                checkIfStuffHappened = true;
+                break;
             }else{
                 backupStack.push(this.commandStack.pop());
             }
@@ -132,13 +139,16 @@ public class DocumentStoreImpl implements DocumentStore {
         while(backupStack.size() > 0){
             this.commandStack.push(backupStack.pop());
         }
+        if(!checkIfStuffHappened){
+            throw new IllegalStateException();
+        }
     }
 
     private boolean saveUndoDoc(DocumentImpl document, URI uri){
         if(document == null){
             hashTableImpl.put(uri, null);
         }else{
-            hashTableImpl.put(document.getKey(), document);
+            hashTableImpl.put(uri, document);
         }
         return true;
     }
