@@ -23,10 +23,7 @@ public class DocumentImpl implements Document {
         this.txt = txt;
         this.wordCounter = new HashMap<>();
         this.spaceTxt = this.txt.split(" ");
-        for(int counter = 0; counter < this.spaceTxt.length; counter++){ //made from "<=" to "<"
-            /*if(isValidDouble(this.spaceTxt[counter]) || isValidWord(this.spaceTxt[counter])){
-                this.wordCounter.put((this.spaceTxt[counter]), (wordCounter.getOrDefault(this.spaceTxt[counter], 0) + 1));
-            }*/
+        for(int counter = 0; counter < this.spaceTxt.length; counter++){
             this.setOfStrings.add((this.spaceTxt[counter]).replaceAll("[^A-Za-z0-9]", ""));
             this.wordCounter.put((((this.spaceTxt[counter]).replaceAll("[^A-Za-z0-9]", "")).toLowerCase()), (wordCounter.getOrDefault(this.spaceTxt[counter], 0) + 1));
         }
@@ -41,23 +38,6 @@ public class DocumentImpl implements Document {
         this.checkWhatHeckJudahWantsFromMyLife = true;
     }
 
-    /*private static boolean isValidDouble(String str){
-        try{
-            Double.parseDouble(str);
-            return true;
-        }catch (NumberFormatException e){
-            return false;
-        }
-    }
-
-    private static boolean isValidWord(String str){
-        for(int checker = 0; checker <= str.length(); checker++){
-            if((str.charAt(checker) < 65) || ((str.charAt(checker) > 90) && (str.charAt(checker) < 97)) || (str.charAt(checker) > 122)){
-                return false;
-            }
-        }
-        return true;
-    }*/
 
     /**
      * @return content of text document
@@ -87,10 +67,10 @@ public class DocumentImpl implements Document {
      * @return the number of times the given words appears in the document. If it's a binary document, return 0.
      */
     public int wordCount(String word){
+        word = word.toLowerCase(); //fixed 2 tests
         if(checkWhatHeckJudahWantsFromMyLife){
             return 0;
         }
-        //return this.wordCounter.getOrDefault(word, 0); //was just normal "get()" before
         int wordCounter = 0;
         for (int i = 0; i < this.spaceTxt.length; i++){
             String tester = this.spaceTxt[i].replaceAll("[^A-Za-z0-9]", "").toLowerCase();
@@ -105,7 +85,6 @@ public class DocumentImpl implements Document {
      * @return all the words that appear in the document
      */
     public Set<String> getWords(){
-        //return this.wordCounter.keySet();
         return this.setOfStrings;
     }
 

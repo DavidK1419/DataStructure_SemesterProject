@@ -29,10 +29,10 @@ public class TrieImpl<Value> implements Trie<Value>{
      * @param val
      */
     public void put(String key, Value val){
+        key = key.toLowerCase();
         //deleteAll the value from this key
         if (val == null) {
             throw new IllegalArgumentException();
-            //this.deleteAll(key);
         }else{
             this.root = put(this.root, key, val, 0);
         }
@@ -103,6 +103,7 @@ public class TrieImpl<Value> implements Trie<Value>{
      * @return a List of all matching Values containing the given prefix, in descending order
      */
     public List<Value> getAllWithPrefixSorted(String prefix, Comparator<Value> comparator){
+        prefix = prefix.toLowerCase(); //this with other one passed 1
         this.getAllWithPrefixSorteSet = new HashSet<>();
         getAllWithPrefixSorted(this.root, prefix, 0);
         List<Value> listOfValues = new ArrayList<>();
@@ -119,7 +120,7 @@ public class TrieImpl<Value> implements Trie<Value>{
 
 
     private Node getAllWithPrefixSorted(Node node, String prefix, int d) {
-        //return null;*/
+        prefix = prefix.toLowerCase(); //this with other one passed 1
         //link was null - return null, indicating a miss
         if (node == null) {
             return null;
@@ -156,6 +157,7 @@ public class TrieImpl<Value> implements Trie<Value>{
      * @return a Set of all Values that were deleted.
      */
     public Set<Value> deleteAllWithPrefix(String prefix){
+        prefix = prefix.toLowerCase(); //added later
         this.deleteAllWithPrefixSortedSet = new HashSet<>();
         this.getAllWithPrefixSorteSet = new HashSet<>();
         getAllWithPrefixSorted(this.root, prefix, 0);
@@ -173,6 +175,7 @@ public class TrieImpl<Value> implements Trie<Value>{
         //return the node
         if (d == prefix.length()) {
             node = null;
+            //iterateOverEverythingAndDelete(node);
             return this.deleteAllWithPrefixSortedSet;
         }
         //proceed to the next node in the chain of nodes that
@@ -180,20 +183,6 @@ public class TrieImpl<Value> implements Trie<Value>{
         char c = prefix.charAt(d);
         return this.deleteAllWithPrefixSorted(node.links[c], prefix, d + 1/*, fillingValues*/);
     }
-
-    /*private void iterateOverEverythingAndDelete(Node node){
-        if (node == null) {
-            return;
-        }
-        this.deleteAllWithPrefixSortedSet.addAll(node.collectionOfVals);
-        for (int c = 0; c < this.alphabetSize; c++) {
-            if (node.links[c] != null) {
-                iterateOverEverything(node.links[c]);
-                this.deleteAllWithPrefixSortedSet.addAll(node.collectionOfVals);
-
-            }
-        }
-    }*/
 
 
     /**
@@ -257,11 +246,13 @@ public class TrieImpl<Value> implements Trie<Value>{
     }
 
     private Node delete(Node node, String key, int d, Value val) {
+        key = key.toLowerCase();
         if (node == null) {
             return null;
         }
         //we're at the node to del - set the val to null
-        if ((d == key.length()) && (node.collectionOfVals.contains(val))) { //prbably have to account for that fact that there are multiple vals there
+        if ((d == key.length())) {
+            //taking out /* && (node.collectionOfVals.contains(val))*/ above passes 3 that only failed when fixed others
             this.tempValue = true;
             node.collectionOfVals.remove(val);
             return node;

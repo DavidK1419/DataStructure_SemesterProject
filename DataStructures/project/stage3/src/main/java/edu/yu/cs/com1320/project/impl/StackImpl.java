@@ -53,7 +53,7 @@ public class StackImpl<T> implements Stack<T> {
      * @return the element at the top of the stack without removing it
      */
     public T peek(){
-        return (T)this.commandStack.command; //I think
+        return (T)this.commandStack.command;
     }
 
     /**

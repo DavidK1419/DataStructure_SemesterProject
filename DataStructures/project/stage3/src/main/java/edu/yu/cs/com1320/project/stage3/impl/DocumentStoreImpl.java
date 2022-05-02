@@ -86,7 +86,6 @@ public class DocumentStoreImpl implements DocumentStore {
             }catch(NullPointerException e){
                 oldDoc = 0;
             }
-            //this.trie.put(uri.toString(), newBytesDoc);
             Function<URI, Boolean> bytesFunction = URI -> saveUndoDoc(oldDocValue, uri);
             GenericCommand genericCommand  = new GenericCommand(uri, bytesFunction);
             this.commandStack.push(genericCommand);
@@ -133,7 +132,7 @@ public class DocumentStoreImpl implements DocumentStore {
      */
     public void undo() throws IllegalStateException{
         try {
-            ((GenericCommand)this.commandStack.pop()).undo();
+            this.commandStack.pop().undo(); //removed cast to GenericCommand
         }catch(NullPointerException e){
             throw new IllegalStateException();
         }
@@ -148,7 +147,7 @@ public class DocumentStoreImpl implements DocumentStore {
         StackImpl<Undoable> backupStack = new StackImpl();
         boolean checkIfStuffHappened = false;
         while(this.commandStack.size() > 0){
-            if(this.commandStack.peek() instanceof GenericCommand){ //from this line
+            if(this.commandStack.peek() instanceof GenericCommand){
                 if(((GenericCommand<?>) this.commandStack.peek()).getTarget().equals(uri)){
                     this.commandStack.pop().undo();
                     checkIfStuffHappened = true;
@@ -157,7 +156,7 @@ public class DocumentStoreImpl implements DocumentStore {
                     backupStack.push(this.commandStack.pop());
                 }
             }else{
-                CommandSet commandSet = (CommandSet) this.commandStack.peek(); //fix me
+                CommandSet commandSet = (CommandSet) this.commandStack.peek();
                 if(commandSet.containsTarget(uri)){
                     commandSet.undo(uri);
                     if(commandSet.isEmpty()){
@@ -168,7 +167,7 @@ public class DocumentStoreImpl implements DocumentStore {
                 }else{
                     backupStack.push(this.commandStack.pop());
                 }
-            } //until this line is new
+            }
         }
         while(backupStack.size() > 0){
             this.commandStack.push(backupStack.pop());
@@ -223,7 +222,9 @@ public class DocumentStoreImpl implements DocumentStore {
      * @return a Set of URIs of the documents that were deleted.
      */
     public Set<URI> deleteAll(String keyword){
+        keyword = keyword.toLowerCase(); //new
         List<Document> search = search(keyword);
+        this.trie.deleteAll(keyword); //new
         if(search.size() > 1){
             CommandSet commandSet = new CommandSet();
             for(Document document : search){
@@ -248,6 +249,8 @@ public class DocumentStoreImpl implements DocumentStore {
                 this.trie.delete(singleInnerWordsToDelete, d);
                 uriSet.add((d).getKey());
             }
+            //new stuff added to remove docs from hashtable
+            this.hashTableImpl.put(d.getKey(), null);//new line only passed one
         }
         return uriSet;
     }
@@ -259,7 +262,8 @@ public class DocumentStoreImpl implements DocumentStore {
      * @return a Set of URIs of the documents that were deleted.
      */
     public Set<URI> deleteAllWithPrefix(String keywordPrefix){
-        Set<Document> checkIfWillWork = trie.deleteAllWithPrefix(keywordPrefix);
+        keywordPrefix = keywordPrefix.toLowerCase();//new
+        List<Document> checkIfWillWork = searchByPrefix(keywordPrefix);//this one
         if(checkIfWillWork.size() > 1){
             CommandSet commandSet = new CommandSet();
             for(Document document : checkIfWillWork){
@@ -278,11 +282,12 @@ public class DocumentStoreImpl implements DocumentStore {
         }
         Set<URI> uriSet = new HashSet<>();
         for(Document d : checkIfWillWork){
-            //Set<String> innerWordsToDelete = d.getWords();
-            //for(String singleInnerWordsToDelete : innerWordsToDelete){
-                //this.trie.delete(singleInnerWordsToDelete, d);
+            Set<String> innerWordsToDelete = d.getWords(); //this inner part of the for-loop is new
+            for(String singleInnerWordsToDelete : innerWordsToDelete){
+                this.trie.delete(singleInnerWordsToDelete, d);
                 uriSet.add((d).getKey());
-            //}
+            }
+            this.hashTableImpl.put(d.getKey(), null); //and this
         }
         return uriSet;
     }

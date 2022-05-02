@@ -1,130 +1,121 @@
 package edu.yu.cs.com1320.project.impl;
 
-import edu.yu.cs.com1320.project.stage3.Document;
-import edu.yu.cs.com1320.project.stage3.DocumentStore;
-import edu.yu.cs.com1320.project.stage3.impl.DocumentImpl;
-import edu.yu.cs.com1320.project.stage3.impl.DocumentStoreImpl;
+import edu.yu.cs.com1320.project.impl.TrieImpl;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TrieImplTest {
-    @Test
-    public void testTrie() throws URISyntaxException, IOException {
-        DocumentStoreImpl docStore = new DocumentStoreImpl();
-        String test1 = "A1 A2 A3";
-        String test2 = "B1 B2 B3";
-        String test3 = "C1 C2 C3";
-        InputStream testStream1 = new ByteArrayInputStream(test1.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream2 = new ByteArrayInputStream(test2.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream3 = new ByteArrayInputStream(test3.getBytes(StandardCharsets.UTF_8));
-        URI uri1 = new URI("1");
-        URI uri2 = new URI("2");
-        URI uri3 = new URI("3");
-        docStore.putDocument(testStream1, uri1, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream2, uri2, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream3, uri3, DocumentStore.DocumentFormat.TXT);
-        List<Document> listOfDocs = docStore.search("C2");
-        Document d = listOfDocs.get(0);
-        assertEquals("3", d.getKey().toString());
+public class TrieImplTest {
+
+    private TrieImpl<Integer> getTestTrie(){
+        TrieImpl<Integer> ti = new TrieImpl<>();
+        ti.put("oNe",11);
+        ti.put("onE",1);
+        ti.put("one",111);
+        ti.put("oneANdDone",121);
+        ti.put("OneAndDOne",131);
+        ti.put("oneAndDonE",101);
+        ti.put("tWo",2);
+        ti.put("twO",22);
+        ti.put("twoAndMOre",23456);
+        ti.put("twoAndMoRe",27895);
+        return ti;
     }
 
     @Test
-    public void testSearchByPrefix() throws IOException, URISyntaxException {
-        DocumentStoreImpl docStore = new DocumentStoreImpl();
-        String test1 = "tool tuesday toolbox 346d tuster454&$(*%l tu tu ";
-        String test2 = "barf toy whatsapp testsers2";
-        String test3 = "t@@@@@ool tuesday t:oolbox 346d tor tos tow";
-        InputStream testStream1 = new ByteArrayInputStream(test1.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream2 = new ByteArrayInputStream(test2.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream3 = new ByteArrayInputStream(test3.getBytes(StandardCharsets.UTF_8));
-        URI uri1 = new URI("1");
-        URI uri2 = new URI("2");
-        URI uri3 = new URI("3");
-        docStore.putDocument(testStream1, uri1, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream2, uri2, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream3, uri3, DocumentStore.DocumentFormat.TXT);
-        List<Document> listOfDocs = docStore.searchByPrefix("to");
-        assertEquals(3,listOfDocs.size());
-        assertEquals(3,Integer.parseInt(listOfDocs.get(0).getKey().toString()));
-        assertEquals(1,Integer.parseInt(listOfDocs.get(1).getKey().toString()));
-        assertEquals(2,Integer.parseInt(listOfDocs.get(2).getKey().toString()));
-        listOfDocs = docStore.searchByPrefix("tu");
-        assertEquals(2,listOfDocs.size());
-        assertEquals(1,Integer.parseInt(listOfDocs.get(0).getKey().toString()));
-        assertEquals(3,Integer.parseInt(listOfDocs.get(1).getKey().toString()));
+    public void testDelete(){
+        TrieImpl<Integer> ti = getTestTrie();
+        int val = ti.delete("one",11);
+        assertEquals(val,11,"delete(\"one\",11) should returned 11");
+        List<Integer> ones = ti.getAllSorted("one",getComparator());
+        assertEquals(2,ones.size(),"getAllSorted(\"one\")should've returned 2 results");
+        assertEquals(111,ones.get(0));
+        assertEquals(1,ones.get(1));
     }
 
     @Test
-    public void testDelete() throws IOException, URISyntaxException {
-        DocumentStoreImpl docStore = new DocumentStoreImpl();
-        String test1 = "tool tuesday toolbox 346d tuster454&$(*%l tu tu ";
-        String test2 = "barf toy whatsapp testsers2";
-        String test3 = "t@@@@@ool tuesday t:oolbox 346d tor tos tow";
-        String test4 = "gibbly gobely gook On$e ud0n @ time todler";
-        InputStream testStream1 = new ByteArrayInputStream(test1.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream2 = new ByteArrayInputStream(test2.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream3 = new ByteArrayInputStream(test3.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream4 = new ByteArrayInputStream(test4.getBytes(StandardCharsets.UTF_8));
-        URI uri1 = new URI("1");
-        URI uri2 = new URI("2");
-        URI uri3 = new URI("3");
-        URI uri4 = new URI("4");
-        docStore.putDocument(testStream1, uri1, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream2, uri2, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream3, uri3, DocumentStore.DocumentFormat.TXT);
-        List<Document> listOfDocs = docStore.searchByPrefix("to");
-        assertEquals(3,Integer.parseInt(listOfDocs.get(0).getKey().toString()));
-        listOfDocs = docStore.search("tow");
-        assertEquals(3,Integer.parseInt(listOfDocs.get(0).getKey().toString()));
-        docStore.deleteAll("tow");
-        //System.out.println(docStore.search("tow"));
-        docStore.undo(uri3);
-        listOfDocs = docStore.search("tow");
-        assertEquals(3,Integer.parseInt(listOfDocs.get(0).getKey().toString()));
-        docStore.putDocument(testStream4, uri4, DocumentStore.DocumentFormat.TXT);
-        listOfDocs = docStore.search("todler");
-        Document d = listOfDocs.get(0);
-        assertEquals("4", d.getKey().toString());
-        docStore.undo();
-        //System.out.println(docStore.search("todler"));
+    public void testDeleteAll(){
+        TrieImpl<Integer> ti = getTestTrie();
+        //make sure that those which were supposed to be deleted were
+        Set<Integer> oneanddone = ti.deleteAll("oneanddone");
+        assertEquals(3,oneanddone.size(),"deleteAll(\"oneanddone\")should've returned 3 results");
+        assertTrue(oneanddone.contains(131));
+        assertTrue(oneanddone.contains(121));
+        assertTrue(oneanddone.contains(101));
+        //check that others are still present
+        List<Integer> ones = ti.getAllWithPrefixSorted("one",getComparator());
+        assertEquals(3,ones.size(),"getAllWithPrefixSorted(\"one\")should've returned 3 results");
+        assertEquals(111,ones.get(0));
+        assertEquals(11,ones.get(1));
+        assertEquals(1,ones.get(2));
+        List<Integer> twos = ti.getAllWithPrefixSorted("two",getComparator());
+        assertEquals(4,twos.size(),"getAllWithPrefixSorted(\"two\")should've returned 4 results");
+        assertEquals(27895,twos.get(0));
+        assertEquals(23456,twos.get(1));
+        assertEquals(22,twos.get(2));
+        assertEquals(2,twos.get(3));
     }
 
     @Test
-    public void testDeleteByPrefix() throws IOException, URISyntaxException {
-        DocumentStoreImpl docStore = new DocumentStoreImpl();
-        String test1 = "tool tuesday tioolbox 346d tuster454&$(*%l tu tu ";
-        String test2 = "barf toy whatsapp testsers2";
-        String test3 = "t@@@@l@ool tuesday t:oolbox 346d tor tos tow";
-        String test4 = "gibbly gobely gook On$e ud0n @ time todler";
-        InputStream testStream1 = new ByteArrayInputStream(test1.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream2 = new ByteArrayInputStream(test2.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream3 = new ByteArrayInputStream(test3.getBytes(StandardCharsets.UTF_8));
-        InputStream testStream4 = new ByteArrayInputStream(test4.getBytes(StandardCharsets.UTF_8));
-        URI uri1 = new URI("1");
-        URI uri2 = new URI("2");
-        URI uri3 = new URI("3");
-        URI uri4 = new URI("4");
-        docStore.putDocument(testStream1, uri1, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream2, uri2, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream3, uri3, DocumentStore.DocumentFormat.TXT);
-        docStore.putDocument(testStream4, uri4, DocumentStore.DocumentFormat.TXT);
-        Set<URI> setOfUris = docStore.deleteAllWithPrefix("tool");
-        assertEquals(2, setOfUris.size());
-        assertTrue(setOfUris.contains(uri1));
-        assertTrue(setOfUris.contains(uri3));
-        assertTrue(!setOfUris.contains(uri2));
-
+    public void testGetAllWithPrefixSorted(){
+        TrieImpl<Integer> ti = getTestTrie();
+        List<Integer> ones = ti.getAllWithPrefixSorted("one",getComparator());
+        //one
+        assertEquals(6,ones.size(),"getAllWithPrefixSorted(\"one\")should've returned 6 results");
+        assertEquals(131,ones.get(0));
+        assertEquals(121,ones.get(1));
+        assertEquals(111,ones.get(2));
+        assertEquals(101,ones.get(3));
+        assertEquals(11,ones.get(4));
+        assertEquals(1,ones.get(5));
+        //two
+        List<Integer> two = ti.getAllWithPrefixSorted("TwO",getComparator());
+        assertEquals(4,two.size(),"getAllWithPrefixSorted(\"TwO\")should've returned 4 results");
+        assertEquals(27895,two.get(0));
+        assertEquals(23456,two.get(1));
+        assertEquals(22,two.get(2));
+        assertEquals(2,two.get(3));
     }
 
+    @Test
+    public void testDeleteAllWithPrefix(){
+        TrieImpl<Integer> ti = getTestTrie();
+        Set<Integer> two = ti.deleteAllWithPrefix("two");
+        assertEquals(4,two.size(),"deleteAllWithPrefix(\"TwO\")should've returned 4 results");
+        assertTrue(two.contains(27895));
+        assertTrue(two.contains(23456));
+        assertTrue(two.contains(22));
+        assertTrue(two.contains(2));
+    }
+
+    @Test
+    public void testPutAndGetAll(){
+        TrieImpl<Integer> ti = new TrieImpl<>();
+        ti.put("one",11);
+        ti.put("one",121);
+        ti.put("two",2);
+        List<Integer> ones = ti.getAllSorted("one",this.getComparator());
+        assertEquals(2,ones.size(),"getAllSorted should've returned 2 results");
+        assertEquals(121,ones.get(0),"first element should be 121");
+        assertEquals(11,ones.get(1),"second element should be 11");
+    }
+
+    private Comparator<Integer> getComparator(){
+        return new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                if(o1 < o2){
+                    return 1;
+                }else if(o1.equals(o2)){
+                    return 0;
+                }else{
+                    return -1;
+                }
+            }
+        };
+    }
 }
