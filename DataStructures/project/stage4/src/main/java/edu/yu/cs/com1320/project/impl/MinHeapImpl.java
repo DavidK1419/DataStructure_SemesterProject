@@ -50,7 +50,13 @@ public class MinHeapImpl<E extends Comparable<E>> extends MinHeap<E> {
     }
 
     protected int getArrayIndex(E element) {
-        return this.count; //I think
+        for(int i = 0; i < elements.length; i++){
+            if((elements[i] != null) && (elements[i].equals(element))){
+                return i;
+
+            }
+        }
+        return -1;
     }
 
     protected void doubleArraySize() {
