@@ -1,9 +1,7 @@
 package edu.yu.cs.com1320.project.impl;
 
 import edu.yu.cs.com1320.project.MinHeap;
-
 import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.NoSuchElementException;
 
 public class MinHeapImpl<E extends Comparable<E>> extends MinHeap<E> {
@@ -13,12 +11,11 @@ public class MinHeapImpl<E extends Comparable<E>> extends MinHeap<E> {
      * data structure or logic needed to reheapify an element after its last use time changes.
      * @param <E>
      */
-    //public abstract class MinHeap<E extends Comparable<E>> {
     protected E[] elements;
     protected int count = 0;
 
     public MinHeapImpl(){
-        this.elements = (E[])Array.newInstance(Comparable.class, 10); //(E[]) new Object[10];
+        this.elements = (E[])Array.newInstance(Comparable.class, 10);
     }
 
     public void reHeapify(E element) {
@@ -29,24 +26,9 @@ public class MinHeapImpl<E extends Comparable<E>> extends MinHeap<E> {
                 break;
             }
         }
-        upHeap(finder); //so then what does he mean by additional data structure!?!?!?!?!?!!?!??!?!?!?!?!?!?!?!?!?!?!?!?!?!?!
+        upHeap(finder);
         downHeap(finder);
 
-       /* MaxHeap newMaxHeap = new MaxHeap using an Array
-        while(this.count > 0){
-            newMaxHeap.insert(this.remove());
-        }
-        while(newMaxHeap.size > 0){
-            this.insert(newMaxHeap.remove());
-        }
-
-        HeapPQ<Integer> heap = new HeapPQ<>(a.length);
-        for(int n : a){
-            heap.insert(n);
-        }
-        for(int i = 0; i < a.length; i++){
-            a[i] = heap.removeMax();
-        }*/
     }
 
     protected int getArrayIndex(E element) {

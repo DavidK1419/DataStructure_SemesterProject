@@ -69,7 +69,7 @@ public class DocumentStoreImpl implements DocumentStore {
             String bytesString = new String(bites, StandardCharsets.UTF_8);
             DocumentImpl newTextDoc = new DocumentImpl(uri, bytesString);
             if(isThereLimit){
-                deleteFromMinHeap();
+                deleteFromMinHeap(newTextDoc);
             }
             newTextDoc.setLastUseTime(System.nanoTime());
             minHeap.insert(newTextDoc);
@@ -97,7 +97,7 @@ public class DocumentStoreImpl implements DocumentStore {
         if(format.ordinal() == 1) {
             DocumentImpl newBytesDoc = new DocumentImpl(uri, bites);
             if(isThereLimit){
-                deleteFromMinHeap();
+                deleteFromMinHeap(newBytesDoc);
             }
             newBytesDoc.setLastUseTime(System.nanoTime());
             minHeap.insert(newBytesDoc);
@@ -133,8 +133,8 @@ public class DocumentStoreImpl implements DocumentStore {
         return this.hashTableImpl.get(uri);
     }
 
-    private void deleteFromMinHeap(){
-        while((this.currentAmountOfDocs > this.setMaxDocumentCount) || (this.currentAmountOfBytes > this.setMaxDocumentBytes)){
+    private void deleteFromMinHeap(Document document){
+        while((this.currentAmountOfDocs > this.setMaxDocumentCount) || ((this.currentAmountOfBytes + getBytes(document)) > this.setMaxDocumentBytes)){
             Document removingDoc = (Document)minHeap.remove();
             int amountOfBytesToDelete = 0;
             try{
@@ -145,6 +145,16 @@ public class DocumentStoreImpl implements DocumentStore {
             currentAmountOfBytes -= amountOfBytesToDelete;
             currentAmountOfDocs--;
         }
+    }
+
+    private int getBytes(Document document){
+        int amountOfBytesToDelete = 0;
+        try{
+            amountOfBytesToDelete = document.getDocumentTxt().getBytes().length;
+        }catch(NullPointerException e){
+            amountOfBytesToDelete = document.getDocumentBinaryData().length;
+        }
+        return amountOfBytesToDelete;
     }
 
     private void clearBytesFromMinHeap(Document document){
