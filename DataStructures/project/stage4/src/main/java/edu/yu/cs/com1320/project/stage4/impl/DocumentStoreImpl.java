@@ -26,6 +26,8 @@ public class DocumentStoreImpl implements DocumentStore {
     private MinHeapImpl minHeap = new MinHeapImpl();
     private int setMaxDocumentCount;
     private int setMaxDocumentBytes;
+    private boolean isThereDocsLimit = false;
+    private boolean isThereBytesLimit = false;
     private boolean isThereLimit = false;
     private int currentAmountOfDocs;
     private int currentAmountOfBytes;
@@ -96,7 +98,7 @@ public class DocumentStoreImpl implements DocumentStore {
         }
         if(format.ordinal() == 1) {
             DocumentImpl newBytesDoc = new DocumentImpl(uri, bites);
-            if(isThereLimit){
+            if(isThereLimit){ //this bool is messed up
                 deleteFromMinHeap(newBytesDoc);
             }
             newBytesDoc.setLastUseTime(System.nanoTime());
@@ -134,7 +136,50 @@ public class DocumentStoreImpl implements DocumentStore {
     }
 
     private void deleteFromMinHeap(Document document){
-        while((this.currentAmountOfDocs > this.setMaxDocumentCount) || ((this.currentAmountOfBytes + getBytes(document)) > this.setMaxDocumentBytes)){
+        if(isThereDocsLimit){
+            while(this.currentAmountOfDocs >= this.setMaxDocumentCount){
+                Document removingDoc = (Document)minHeap.remove();
+                int amountOfBytesToDelete = 0;
+                try{
+                    amountOfBytesToDelete = removingDoc.getDocumentTxt().getBytes().length;
+                }catch(NullPointerException e){
+                    amountOfBytesToDelete = removingDoc.getDocumentBinaryData().length;
+                }
+                this.currentAmountOfBytes -= amountOfBytesToDelete;
+                this.currentAmountOfDocs--;
+                Function<URI, Boolean> bytesFunction = URI -> savegetRidOfUndoDoc((DocumentImpl) removingDoc, removingDoc.getKey());
+                GenericCommand genericCommand  = new GenericCommand(removingDoc.getKey(), bytesFunction);
+                this.commandStack.push(genericCommand);
+                this.hashTableImpl.put(removingDoc.getKey(), null);
+                removeFromTrie(removingDoc);
+                //have to make undo logic
+            }
+        }
+        if(isThereBytesLimit){
+            while((this.currentAmountOfBytes + getBytes(document)) > this.setMaxDocumentBytes){
+                Document removingDoc = (Document)minHeap.remove();
+                int amountOfBytesToDelete = 0;
+                try{
+                    amountOfBytesToDelete = removingDoc.getDocumentTxt().getBytes().length;
+                }catch(NullPointerException e){
+                    amountOfBytesToDelete = removingDoc.getDocumentBinaryData().length;
+                }
+                this.currentAmountOfBytes -= amountOfBytesToDelete;
+                this.currentAmountOfDocs--;
+                Function<URI, Boolean> bytesFunction = URI -> savegetRidOfUndoDoc((DocumentImpl) removingDoc, removingDoc.getKey());
+                GenericCommand genericCommand  = new GenericCommand(removingDoc.getKey(), bytesFunction);
+                this.commandStack.push(genericCommand);
+                this.hashTableImpl.put(removingDoc.getKey(), null);
+                removeFromTrie(removingDoc);
+                //deleteDocument(removingDoc.getKey());
+                //removeFromTrie(removingDoc);
+            }
+        }
+
+        //have to make undo logic here
+
+
+       /* while((this.currentAmountOfDocs > this.setMaxDocumentCount) || ((this.currentAmountOfBytes + getBytes(document)) > this.setMaxDocumentBytes)){
             Document removingDoc = (Document)minHeap.remove();
             int amountOfBytesToDelete = 0;
             try{
@@ -144,7 +189,7 @@ public class DocumentStoreImpl implements DocumentStore {
             }
             currentAmountOfBytes -= amountOfBytesToDelete;
             currentAmountOfDocs--;
-        }
+        }*/
     }
 
     private int getBytes(Document document){
@@ -380,6 +425,7 @@ public class DocumentStoreImpl implements DocumentStore {
      */
     public void setMaxDocumentCount(int limit){
         this.isThereLimit = true;
+        this.isThereDocsLimit = true;
         this.setMaxDocumentCount = limit;
     }
 
@@ -389,6 +435,7 @@ public class DocumentStoreImpl implements DocumentStore {
      */
     public void setMaxDocumentBytes(int limit){
         this.isThereLimit = true;
+        this.isThereBytesLimit = true;
         this.setMaxDocumentBytes = limit;
     }
 
