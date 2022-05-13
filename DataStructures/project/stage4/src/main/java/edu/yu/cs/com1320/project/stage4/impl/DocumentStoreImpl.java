@@ -142,50 +142,8 @@ public class DocumentStoreImpl implements DocumentStore {
     }
 
     private void deleteFromMinHeap(Document document){
-        if(isThereDocsLimit){
-            while(this.currentAmountOfDocs >= this.setMaxDocumentCount){
-                Document removingDoc = (Document)minHeap.remove();
-                int amountOfBytesToDelete = 0;
-                try{
-                    amountOfBytesToDelete = removingDoc.getDocumentTxt().getBytes().length;
-                }catch(NullPointerException e){
-                    amountOfBytesToDelete = removingDoc.getDocumentBinaryData().length;
-                }
-                this.currentAmountOfBytes -= amountOfBytesToDelete;
-                this.currentAmountOfDocs--;
-                Function<URI, Boolean> bytesFunction = URI -> savegetRidOfUndoDoc((DocumentImpl) removingDoc, removingDoc.getKey());
-                GenericCommand genericCommand  = new GenericCommand(removingDoc.getKey(), bytesFunction);
-                this.commandStack.push(genericCommand);
-               // System.out.println("HI");
-                this.hashTableImpl.put(removingDoc.getKey(), null);
-                removeFromTrie(removingDoc);
-            }
-        }
-        if(isThereBytesLimit){
-            while((this.currentAmountOfBytes + getBytes(document)) > this.setMaxDocumentBytes){
-                Document removingDoc = (Document)minHeap.remove();
-                int amountOfBytesToDelete = 0;
-                try{
-                    amountOfBytesToDelete = removingDoc.getDocumentTxt().getBytes().length;
-                }catch(NullPointerException e){
-                    amountOfBytesToDelete = removingDoc.getDocumentBinaryData().length;
-                }
-                this.currentAmountOfBytes -= amountOfBytesToDelete;
-                this.currentAmountOfDocs--;
-                Function<URI, Boolean> bytesFunction = URI -> savegetRidOfUndoDoc((DocumentImpl) removingDoc, removingDoc.getKey());
-                GenericCommand genericCommand  = new GenericCommand(removingDoc.getKey(), bytesFunction);
-                this.commandStack.push(genericCommand);
-                this.hashTableImpl.put(removingDoc.getKey(), null);
-                removeFromTrie(removingDoc);
-                //deleteDocument(removingDoc.getKey());
-                //removeFromTrie(removingDoc);
-            }
-        }
-
-        //have to make undo logic here
-
-
-       /* while((this.currentAmountOfDocs > this.setMaxDocumentCount) || ((this.currentAmountOfBytes + getBytes(document)) > this.setMaxDocumentBytes)){
+        //new added "="
+        while((isThereDocsLimit && (this.currentAmountOfDocs >= this.setMaxDocumentCount)) || (isThereBytesLimit && ((this.currentAmountOfBytes + getBytes(document)) > this.setMaxDocumentBytes))){
             Document removingDoc = (Document)minHeap.remove();
             int amountOfBytesToDelete = 0;
             try{
@@ -195,8 +153,17 @@ public class DocumentStoreImpl implements DocumentStore {
             }
             currentAmountOfBytes -= amountOfBytesToDelete;
             currentAmountOfDocs--;
-        }*/
+            //new
+            Function<URI, Boolean> bytesFunction = URI -> savegetRidOfUndoDoc((DocumentImpl) removingDoc, removingDoc.getKey());
+            GenericCommand genericCommand  = new GenericCommand(removingDoc.getKey(), bytesFunction);
+            this.commandStack.push(genericCommand);
+            this.hashTableImpl.put(removingDoc.getKey(), null);
+            removeFromTrie(removingDoc);
+        }
     }
+
+
+        //have to make undo logic here
 
     private int getBytes(Document document){
         int amountOfBytesToDelete = 0;
