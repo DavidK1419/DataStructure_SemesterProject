@@ -109,7 +109,13 @@ public class DocumentStoreImpl implements DocumentStore {
             }catch(NullPointerException e){
                 oldDoc = 0;
             }
-            Function<URI, Boolean> bytesFunction = URI -> saveUndoDoc(oldDocValue, uri);
+            Function<URI, Boolean> bytesFunction;
+            if(oldDocValue != null){
+                bytesFunction = URI -> saveUndoDoc(oldDocValue, uri);
+            }else{
+                bytesFunction = URI -> savegetRidOfUndoDoc(newBytesDoc, uri);
+            }
+            //Function<URI, Boolean> bytesFunction = URI -> saveUndoDoc(oldDocValue, uri);
             GenericCommand genericCommand  = new GenericCommand(uri, bytesFunction);
             this.commandStack.push(genericCommand);
             currentAmountOfBytes += newBytesDoc.getDocumentBinaryData().length;
@@ -150,9 +156,9 @@ public class DocumentStoreImpl implements DocumentStore {
                 Function<URI, Boolean> bytesFunction = URI -> savegetRidOfUndoDoc((DocumentImpl) removingDoc, removingDoc.getKey());
                 GenericCommand genericCommand  = new GenericCommand(removingDoc.getKey(), bytesFunction);
                 this.commandStack.push(genericCommand);
+               // System.out.println("HI");
                 this.hashTableImpl.put(removingDoc.getKey(), null);
                 removeFromTrie(removingDoc);
-                //have to make undo logic
             }
         }
         if(isThereBytesLimit){
@@ -246,6 +252,7 @@ public class DocumentStoreImpl implements DocumentStore {
      * @throws IllegalStateException if there are no actions to be undone, i.e. the command stack is empty
      */
     public void undo() throws IllegalStateException{
+        //System.out.println(this.commandStack.size());
         try {
             this.commandStack.pop().undo();
         }catch(NullPointerException e){
