@@ -23,7 +23,7 @@ public class DocumentStoreImpl implements DocumentStore {
     private DocumentPersistenceManager manager;
     private StackImpl<Undoable> commandStack;
     private TrieImpl<URI> trie;
-    private MinHeapImpl minHeap;
+    private MinHeapImpl<URI> minHeap;
     private int setMaxDocumentCount;
     private int setMaxDocumentBytes;
     private boolean isThereDocsLimit;
@@ -135,8 +135,8 @@ public class DocumentStoreImpl implements DocumentStore {
                 //deleteFromMinHeap(newBytesDoc);
             }
             newBytesDoc.setLastUseTime(System.nanoTime());
-            minHeap.insert(newBytesDoc);
-            minHeap.reHeapify(newBytesDoc);
+            minHeap.insert(newBytesDoc.getKey());
+            minHeap.reHeapify(newBytesDoc.getKey());
             try{
                 oldDoc = this.bTreeImpl.put(uri, newBytesDoc).hashCode();
             }catch(NullPointerException e){
@@ -164,31 +164,35 @@ public class DocumentStoreImpl implements DocumentStore {
      * @return the given document
      */
     public Document getDocument(URI uri){
-        DocumentImpl doc;
-        try{
-            doc = (DocumentImpl) this.manager.deserialize(uri);
-            //make method in docStore for putting docs back into the stuff
-            //if this returns a doc:
-                //so method should be while there are limits and they are not being followed
-                //remove the top one form the heap and serialize it
-                //have to get rid of it from disk (might already do that
-            //HAVE TO UPDATE TIME
-            //In the catch - if this is null then try to return from the get of BTree
-            //Also have to get logic for Undo
-        }catch (Exception e){
-
+        DocumentImpl doc = (DocumentImpl) this.bTreeImpl.get(uri);
+        if(isThereLimit){
+            try {
+                deleteFromMinHeap(doc);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+        this.bTreeImpl.put(uri, doc);
+        /*this.minHeap.insert(doc.getKey());
+        Set<String> docsWords = doc.getWords();
+        for(String words : docsWords){
+            this.trie.put(words, doc.getKey());
+        }*/
+        doc.setLastUseTime(System.nanoTime());
         try {
-            this.bTreeImpl.get(uri).setLastUseTime(System.nanoTime());
-            minHeap.reHeapify(this.bTreeImpl.get(uri));
+            minHeap.reHeapify(doc.getKey());
         }catch(NullPointerException e){
         }
-        return this.bTreeImpl.get(uri);
+        Function<URI, Boolean> function = URI -> saveUndoDoc(doc, uri);
+        GenericCommand genericCommand  = new GenericCommand(uri, function);
+        this.commandStack.push(genericCommand);
+        return doc;
+
     }
 
     private void deleteFromMinHeap(Document document) throws Exception { //added throws exception to method signature
         while((isThereDocsLimit && (this.currentAmountOfDocs >= this.setMaxDocumentCount)) || (isThereBytesLimit && ((this.currentAmountOfBytes + getBytes(document)) > this.setMaxDocumentBytes))){
-            Document removingDoc = bTreeImpl.get((URI)this.minHeap.remove());
+            Document removingDoc = bTreeImpl.get((URI) this.minHeap.remove());
             bTreeImpl.moveToDisk(removingDoc.getKey());
             int amountOfBytesToDelete = 0;
             try{
@@ -202,7 +206,7 @@ public class DocumentStoreImpl implements DocumentStore {
             GenericCommand genericCommand  = new GenericCommand(removingDoc.getKey(), bytesFunction);
             this.commandStack.push(genericCommand);
             this.bTreeImpl.put(removingDoc.getKey(), null);
-            removeFromTrie(removingDoc);
+            //removeFromTrie(removingDoc);
         }
     }
 
@@ -252,7 +256,7 @@ public class DocumentStoreImpl implements DocumentStore {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        removeFromTrie(delDoc);
+        //removeFromTrie(delDoc);
         Function<URI, Boolean> nullDoc = URI -> saveUndoDoc((DocumentImpl) delDoc, uri);
         this.commandStack.push(new GenericCommand(uri, nullDoc));
         return true;
@@ -357,7 +361,7 @@ public class DocumentStoreImpl implements DocumentStore {
         List<Document> listOfDocDs = new ArrayList<>();
         for(URI uri:listOfDocURIs){
             listOfDocDs.add(getDocument(uri));
-            this.bTreeImpl.get(uri).setLastUseTime(System.nanoTime());
+            this.getDocument(uri).setLastUseTime(System.nanoTime());
             minHeap.reHeapify(uri);
         }
         return listOfDocDs;

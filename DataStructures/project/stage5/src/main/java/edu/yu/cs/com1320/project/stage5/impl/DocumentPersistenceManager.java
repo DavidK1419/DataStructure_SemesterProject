@@ -5,6 +5,9 @@ import edu.yu.cs.com1320.project.stage5.Document;
 import edu.yu.cs.com1320.project.stage5.PersistenceManager;
 import java.io.*;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * created by the document store and given to the BTree via a call to BTree.setPersistenceManager
@@ -22,21 +25,43 @@ public class DocumentPersistenceManager implements PersistenceManager<URI, Docum
 
     @Override
     public void serialize(URI uri, Document val) throws IOException {
+        //need logic for if already exists
+        FileWriter files;
+        String uriString = uri.toString().replaceAll("http://", "");
+        if(this.path == null){
+            Files.createFile((Paths.get(String.valueOf(System.getProperty("user.dir") + File.separator + uriString /*+ ".json"*/))));
+            files = new FileWriter(System.getProperty("user.dir") + File.separator + uriString + ".json");
+        }else{
+            Files.createFile((Paths.get(String.valueOf(this.path + File.separator + uriString + ".json"))));
+            files = new FileWriter(this.path + File.separator + uriString + ".json");
+        }
+        Gson gson = new Gson();
+        gson.toJson((val), new FileWriter(String.valueOf(files)));
+        files.close();
+
+
+
+
+       /* FileWriter file;
+        if(this.path != null) {
+            file = new FileWriter(this.path + uriString + ".json");
+        }else{
+            file = new FileWriter(System.getProperty("user.dir") + File.separator + uriString + ".json");
+        }
+        Files.createDirectories((Path) (System.getProperty("user.dir") + File.separator + uriString + ".json"));
         String fileName = getPath(uri).toString();
         File file2 = new File(fileName);
         if(file2.exists()){
             this.delete(uri);
         }
-        String uriString = uri.toString().replaceAll("http://", "");
-        FileWriter file;
         if(this.path != null) {
             file = new FileWriter(this.path + uriString + ".json");
         }else{
-            file = new FileWriter("user.dir/" + uriString + ".json");
+            file = new FileWriter(System.getProperty("user.dir") + File.separator + uriString + ".json");
         }
         Gson gson = new Gson();
         gson.toJson((val), new FileWriter(String.valueOf(getPath(uri))));
-        file.close();
+        file.close();*/
     }
 
     @Override
@@ -66,7 +91,7 @@ public class DocumentPersistenceManager implements PersistenceManager<URI, Docum
         if(this.path != null) {
             file = new FileWriter(this.path + uriString + ".json");
         }else{
-            file = new FileWriter("user.dir/" + uriString + ".json");
+            file = new FileWriter(System.getProperty("user.dir") + File.separator + uriString + ".json");
         }
         return file;
     }

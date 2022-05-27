@@ -3,6 +3,7 @@ package edu.yu.cs.com1320.project.impl;
 import edu.yu.cs.com1320.project.BTree;
 import edu.yu.cs.com1320.project.stage5.Document;
 import edu.yu.cs.com1320.project.stage5.PersistenceManager;
+import edu.yu.cs.com1320.project.stage5.impl.DocumentImpl;
 import edu.yu.cs.com1320.project.stage5.impl.DocumentPersistenceManager;
 import java.io.IOException;
 import java.net.URI;
@@ -18,53 +19,53 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
     private int n; //number of key-value pairs in the B-tree
     private DocumentPersistenceManager manager;
 
-        //B-tree node data type
-        private static final class Node {
-            private int entryCount; // number of entries
-            private BTreeImpl.Entry[] entries = new BTreeImpl.Entry[BTreeImpl.MAX]; // the array of children
-            private BTreeImpl.Node next;
-            private BTreeImpl.Node previous;
+    //B-tree node data type
+    private static final class Node {
+        private int entryCount; // number of entries
+        private BTreeImpl.Entry[] entries = new BTreeImpl.Entry[BTreeImpl.MAX]; // the array of children
+        private BTreeImpl.Node next;
+        private BTreeImpl.Node previous;
 
-            // create a node with k entries
-            private Node(int k) {
-                this.entryCount = k;
-            }
-            private void setNext(BTreeImpl.Node next) {
-                this.next = next;
-            }
-            private BTreeImpl.Node getNext() {
-                return this.next;
-            }
-            private void setPrevious(BTreeImpl.Node previous) {
-                this.previous = previous;
-            }
-            private BTreeImpl.Node getPrevious() {
-                return this.previous;
-            }
-            private BTreeImpl.Entry[] getEntries() {
-                return Arrays.copyOf(this.entries, this.entryCount);
-            }
+        // create a node with k entries
+        private Node(int k) {
+            this.entryCount = k;
         }
-
-        //internal nodes: only use key and child
-        //external nodes: only use key and value
-        public static class Entry {
-            private Comparable key;
-            private Object val;
-            private BTreeImpl.Node child;
-
-            public Entry(Comparable key, Object val, BTreeImpl.Node child){
-                this.key = key;
-                this.val = val;
-                this.child = child;
-            }
-            public Object getValue() {
-                return this.val;
-            }
-            public Comparable getKey() {
-                return this.key;
-            }
+        private void setNext(BTreeImpl.Node next) {
+            this.next = next;
         }
+        private BTreeImpl.Node getNext() {
+            return this.next;
+        }
+        private void setPrevious(BTreeImpl.Node previous) {
+            this.previous = previous;
+        }
+        private BTreeImpl.Node getPrevious() {
+            return this.previous;
+        }
+        private BTreeImpl.Entry[] getEntries() {
+            return Arrays.copyOf(this.entries, this.entryCount);
+        }
+    }
+
+    //internal nodes: only use key and child
+    //external nodes: only use key and value
+    private static class Entry {
+        private Comparable key;
+        private Object val;
+        private BTreeImpl.Node child;
+
+        protected Entry(Comparable key, Object val, BTreeImpl.Node child){
+            this.key = key;
+            this.val = val;
+            this.child = child;
+        }
+        protected Object getValue() {
+            return this.val;
+        }
+        protected Comparable getKey() {
+            return this.key;
+        }
+    }
 
     /**
      * Initializes an empty B-tree.
@@ -80,21 +81,21 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
      * @return {@code true} if this symbol table is empty; {@code false}
      *         otherwise
      */
-    public boolean isEmpty(){
+    protected boolean isEmpty(){
         return this.size() == 0;
     }
 
     /**
      * @return the number of key-value pairs in this symbol table
      */
-    public int size() {
+    protected int size() {
         return this.n;
     }
 
     /**
      * @return the height of this B-tree
      */
-    public int height() {
+    protected int height() {
         return this.height;
     }
 
@@ -102,7 +103,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
      * returns a list of all the entries in the Btree, ordered by key
      * @return
      */
-    public ArrayList<BTreeImpl.Entry> getOrderedEntries() {
+    protected ArrayList<BTreeImpl.Entry> getOrderedEntries() {
         BTreeImpl.Node current = this.leftMostExternalNode;
         ArrayList<BTreeImpl.Entry> entries = new ArrayList<>();
         while(current != null) {
@@ -116,7 +117,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
         return entries;
     }
 
-    public BTreeImpl.Entry getMinEntry() {
+    protected BTreeImpl.Entry getMinEntry() {
         BTreeImpl.Node current = this.leftMostExternalNode;
         while(current != null) {
             for(BTreeImpl.Entry e : current.getEntries()) {
@@ -128,7 +129,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
         return null;
     }
 
-    public BTreeImpl.Entry getMaxEntry() {
+    protected BTreeImpl.Entry getMaxEntry() {
         ArrayList<BTreeImpl.Entry> entries = this.getOrderedEntries();
         return entries.get(entries.size()-1);
     }
@@ -148,7 +149,6 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
         try {
             this.moveToDisk(key);
         }catch(Exception e){
-            System.out.println("nope");
         }
         if (key == null) {
             throw new IllegalArgumentException("argument key to put() is null");
@@ -163,7 +163,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
         BTreeImpl.Node newNode = this.put(this.root, key, val, this.height);
         this.n++;
         if (newNode == null) {
-            return get(key);
+            return null;//get(key);
         }
         //split the root:
         //Create a new node to be the root.
@@ -273,7 +273,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
     private static boolean less(Comparable k1, Comparable k2) {
         return k1.compareTo(k2) < 0;
     }
-            //might not need??!!?!?!?!?!?!?!?!?!?!!
+    //might not need??!!?!?!?!?!?!?!?!?!?!!
     private static boolean isEqual(Comparable k1, Comparable k2) {
         return k1.compareTo(k2) == 0;
     }
@@ -292,11 +292,17 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
         if (key == null) {
             throw new IllegalArgumentException("argument to get() is null");
         }
-        BTreeImpl.Entry entry = this.get(this.root, key, this.height);
-        if(entry != null) {
-            return (Value)entry.val;
+        try{
+            DocumentImpl doc = (DocumentImpl) this.manager.deserialize((URI)key);
+            this.put(key, (Value)doc);
+            return (Value)doc;
+        }catch (Exception e) {
+            BTreeImpl.Entry entry = this.get(this.root, key, this.height);
+            if (entry != null) {
+                return (Value) entry.val;
+            }
+            return null;
         }
-        return null;
     }
 
     private BTreeImpl.Entry get(BTreeImpl.Node currentNode, Key key, int height) {

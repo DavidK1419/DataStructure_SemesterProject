@@ -17,11 +17,11 @@ public class DocumentImpl implements Document {
 
 
     public DocumentImpl(URI uri, String text, Map<String, Integer> wordCountMap){
-        if((uri == null) || (txt == null)){
+        if((uri == null) || (text == null)){
             throw new IllegalArgumentException();
         }
         this.uri = uri;
-        this.txt = txt;
+        this.txt = text;
         if(wordCountMap == null) {
             this.wordCounter = new HashMap<>();
             this.spaceTxt = this.txt.split(" ");
