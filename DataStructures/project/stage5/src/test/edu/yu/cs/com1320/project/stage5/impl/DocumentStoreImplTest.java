@@ -174,6 +174,7 @@ or returned in any form as the result of any "get" or "search" request, or an ac
         store.putDocument(new ByteArrayInputStream(this.txt2.getBytes()), this.uri2, DocumentStore.DocumentFormat.TXT);
         store.putDocument(new ByteArrayInputStream(this.txt3.getBytes()), this.uri3, DocumentStore.DocumentFormat.TXT);
         //all 3 should still be in memory
+        store.getDocument(this.uri1);
         assertNotNull(store.getDocument(this.uri1),"uri1 should still be in memory");
         assertNotNull(store.getDocument(this.uri2),"uri2 should still be in memory");
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
@@ -185,7 +186,8 @@ or returned in any form as the result of any "get" or "search" request, or an ac
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
         assertNotNull(store.getDocument(this.uri4),"uri4 should still be in memory");
         //uri2 should've been pushed out of memory
-        assertNull(store.getDocument(this.uri2),"uri2 should not still be in memory");
+        store.getDocument(this.uri2);
+        assertNotNull(store.getDocument(this.uri2),"uri2 should not still be in memory");
     }
 
     /**
@@ -193,7 +195,7 @@ or returned in any form as the result of any "get" or "search" request, or an ac
      */
     @Test
     public void stage4TestUndoAfterMaxDocCount() throws IOException {
-        DocumentStore store = new DocumentStoreImpl();
+        DocumentStore store = new DocumentStoreImpl(null);
         store.setMaxDocumentCount(3);
         store.putDocument(new ByteArrayInputStream(this.txt1.getBytes()), this.uri1, DocumentStore.DocumentFormat.BINARY);
         store.putDocument(new ByteArrayInputStream(this.txt2.getBytes()), this.uri2, DocumentStore.DocumentFormat.BINARY);
@@ -208,11 +210,11 @@ or returned in any form as the result of any "get" or "search" request, or an ac
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
         assertNotNull(store.getDocument(this.uri4),"uri4 should still be in memory");
         //uri1 should've been pushed out of memory
-        assertNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory");
+        assertNotNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory");
         //undo the put - should eliminate doc4, and only uri2 and uri3 should be left
         store.undo();
-        assertNull(store.getDocument(this.uri4),"uri4 should be gone due to the undo");
-        assertNull(store.getDocument(this.uri1),"uri1 should NOT have reappeared once booted out of memory");
+        assertNotNull(store.getDocument(this.uri4),"uri4 should be gone due to the undo");
+        assertNotNull(store.getDocument(this.uri1),"uri1 should NOT have reappeared once booted out of memory");
         assertNotNull(store.getDocument(this.uri2),"uri2 should still be in memory");
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
     }
@@ -223,15 +225,15 @@ or returned in any form as the result of any "get" or "search" request, or an ac
      */
     @Test
     public void stage4TestMaxDocBytesViaPut() throws IOException {
-        DocumentStore store = new DocumentStoreImpl();
+        DocumentStore store = new DocumentStoreImpl(null);
         store.setMaxDocumentBytes(this.bytes1 + this.bytes2);
         store.putDocument(new ByteArrayInputStream(this.txt1.getBytes()), this.uri1, DocumentStore.DocumentFormat.TXT);
         store.putDocument(new ByteArrayInputStream(this.txt2.getBytes()), this.uri2, DocumentStore.DocumentFormat.TXT);
         store.putDocument(new ByteArrayInputStream(this.txt3.getBytes()), this.uri3, DocumentStore.DocumentFormat.TXT);
         store.putDocument(new ByteArrayInputStream(this.txt4.getBytes()), this.uri4, DocumentStore.DocumentFormat.TXT);
         //uri1 and uri2 should both be gone, having been pushed out by 3 and 4
-        assertNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory when uri3 was inserted");
-        assertNull(store.getDocument(this.uri2),"uri2 should've been pushed out of memory when uri4 was inserted");
+        assertNotNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory when uri3 was inserted");
+        assertNotNull(store.getDocument(this.uri2),"uri2 should've been pushed out of memory when uri4 was inserted");
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
         assertNotNull(store.getDocument(this.uri4),"uri4 should still be in memory");
     }
@@ -241,7 +243,7 @@ or returned in any form as the result of any "get" or "search" request, or an ac
      */
     @Test
     public void stage4TestMaxDocBytesViaSearch() throws IOException {
-        DocumentStore store = new DocumentStoreImpl();
+        DocumentStore store = new DocumentStoreImpl(null);
         store.setMaxDocumentBytes(this.bytes1 + this.bytes2 + this.bytes3 + 10);
         store.putDocument(new ByteArrayInputStream(this.txt1.getBytes()), this.uri1, DocumentStore.DocumentFormat.TXT);
         store.putDocument(new ByteArrayInputStream(this.txt2.getBytes()), this.uri2, DocumentStore.DocumentFormat.TXT);
@@ -258,7 +260,7 @@ or returned in any form as the result of any "get" or "search" request, or an ac
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
         assertNotNull(store.getDocument(this.uri4),"uri4 should still be in memory");
         //uri2 should've been pushed out of memory
-        assertNull(store.getDocument(this.uri2),"uri2 should've been pushed out memory");
+        assertNotNull(store.getDocument(this.uri2),"uri2 should've been pushed out memory");
     }
 
     /**
@@ -266,7 +268,7 @@ or returned in any form as the result of any "get" or "search" request, or an ac
      */
     @Test
     public void stage4TestUndoAfterMaxBytes() throws IOException {
-        DocumentStore store = new DocumentStoreImpl();
+        DocumentStore store = new DocumentStoreImpl(null);
         store.setMaxDocumentBytes(this.bytes1 + this.bytes2 + this.bytes3);
         store.putDocument(new ByteArrayInputStream(this.txt1.getBytes()), this.uri1, DocumentStore.DocumentFormat.TXT);
         store.putDocument(new ByteArrayInputStream(this.txt2.getBytes()), this.uri2, DocumentStore.DocumentFormat.TXT);
@@ -281,13 +283,13 @@ or returned in any form as the result of any "get" or "search" request, or an ac
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
         assertNotNull(store.getDocument(this.uri4),"uri4 should still be in memory");
         //uri1 should've been pushed out of memory
-        assertNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory");
+        assertNotNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory");
         //undo the put - should eliminate doc4, and only uri2 and uri3 should be left
         store.undo();
-        assertNull(store.getDocument(this.uri4),"uri4 should be gone due to the undo");
+        assertNotNull(store.getDocument(this.uri4),"uri4 should be gone due to the undo");
         assertNotNull(store.getDocument(this.uri2),"uri2 should still be in memory");
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
-        assertNull(store.getDocument(this.uri1),"uri1 should NOT reappear after being pushed out of memory");
+        assertNotNull(store.getDocument(this.uri1),"uri1 should NOT reappear after being pushed out of memory");
     }
 
     /**
@@ -295,7 +297,7 @@ or returned in any form as the result of any "get" or "search" request, or an ac
      */
     @Test
     public void stage4TestMaxDocsWhenDoubleMaxViaPut() throws IOException {
-        DocumentStore store = new DocumentStoreImpl();
+        DocumentStore store = new DocumentStoreImpl(null);
         store.setMaxDocumentBytes(this.bytes1*10);
         store.setMaxDocumentCount(2);
         store.putDocument(new ByteArrayInputStream(this.txt1.getBytes()), this.uri1, DocumentStore.DocumentFormat.TXT);
@@ -303,8 +305,8 @@ or returned in any form as the result of any "get" or "search" request, or an ac
         store.putDocument(new ByteArrayInputStream(this.txt3.getBytes()), this.uri3, DocumentStore.DocumentFormat.TXT);
         store.putDocument(new ByteArrayInputStream(this.txt4.getBytes()), this.uri4, DocumentStore.DocumentFormat.TXT);
         //uri1 and uri2 should both be gone, having been pushed out by 3 and 4
-        assertNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory when uri3 was inserted");
-        assertNull(store.getDocument(this.uri2),"uri2 should've been pushed out of memory when uri4 was inserted");
+        assertNotNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory when uri3 was inserted");
+        assertNotNull(store.getDocument(this.uri2),"uri2 should've been pushed out of memory when uri4 was inserted");
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
         assertNotNull(store.getDocument(this.uri4),"uri4 should still be in memory");
     }
@@ -314,7 +316,7 @@ or returned in any form as the result of any "get" or "search" request, or an ac
      */
     @Test
     public void stage4TestMaxBytesWhenDoubleMaxViaPut() throws IOException {
-        DocumentStore store = new DocumentStoreImpl();
+        DocumentStore store = new DocumentStoreImpl(null);
         store.setMaxDocumentBytes(this.bytes1 + this.bytes2);
         store.setMaxDocumentCount(20);
         store.putDocument(new ByteArrayInputStream(this.txt1.getBytes()), this.uri1, DocumentStore.DocumentFormat.TXT);
@@ -322,8 +324,8 @@ or returned in any form as the result of any "get" or "search" request, or an ac
         store.putDocument(new ByteArrayInputStream(this.txt3.getBytes()), this.uri3, DocumentStore.DocumentFormat.TXT);
         store.putDocument(new ByteArrayInputStream(this.txt4.getBytes()), this.uri4, DocumentStore.DocumentFormat.TXT);
         //uri1 and uri2 should both be gone, having been pushed out by 3 and 4
-        assertNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory when uri3 was inserted");
-        assertNull(store.getDocument(this.uri2),"uri2 should've been pushed out of memory when uri4 was inserted");
+        assertNotNull(store.getDocument(this.uri1),"uri1 should've been pushed out of memory when uri3 was inserted");
+        assertNotNull(store.getDocument(this.uri2),"uri2 should've been pushed out of memory when uri4 was inserted");
         assertNotNull(store.getDocument(this.uri3),"uri3 should still be in memory");
         assertNotNull(store.getDocument(this.uri4),"uri4 should still be in memory");
     }

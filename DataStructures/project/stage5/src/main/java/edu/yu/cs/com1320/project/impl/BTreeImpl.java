@@ -5,10 +5,16 @@ import edu.yu.cs.com1320.project.stage5.Document;
 import edu.yu.cs.com1320.project.stage5.PersistenceManager;
 import edu.yu.cs.com1320.project.stage5.impl.DocumentImpl;
 import edu.yu.cs.com1320.project.stage5.impl.DocumentPersistenceManager;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key, Value> {
     //max children per B-tree node = MAX-1 (must be an even number and greater than 2)
@@ -18,6 +24,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
     private int height; //height of the B-tree
     private int n; //number of key-value pairs in the B-tree
     private DocumentPersistenceManager manager;
+    private Set setOfSerializedValues;
 
     //B-tree node data type
     private static final class Node {
@@ -30,18 +37,23 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
         private Node(int k) {
             this.entryCount = k;
         }
+
         private void setNext(BTreeImpl.Node next) {
             this.next = next;
         }
+
         private BTreeImpl.Node getNext() {
             return this.next;
         }
+
         private void setPrevious(BTreeImpl.Node previous) {
             this.previous = previous;
         }
+
         private BTreeImpl.Node getPrevious() {
             return this.previous;
         }
+
         private BTreeImpl.Entry[] getEntries() {
             return Arrays.copyOf(this.entries, this.entryCount);
         }
@@ -54,14 +66,16 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
         private Object val;
         private BTreeImpl.Node child;
 
-        protected Entry(Comparable key, Object val, BTreeImpl.Node child){
+        protected Entry(Comparable key, Object val, BTreeImpl.Node child) {
             this.key = key;
             this.val = val;
             this.child = child;
         }
+
         protected Object getValue() {
             return this.val;
         }
+
         protected Comparable getKey() {
             return this.key;
         }
@@ -73,15 +87,16 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
     public BTreeImpl() {
         this.root = new BTreeImpl.Node(0);
         this.leftMostExternalNode = this.root;
+        this.setOfSerializedValues = new HashSet();
     }
 
     /**
      * Returns true if this symbol table is empty.
      *
      * @return {@code true} if this symbol table is empty; {@code false}
-     *         otherwise
+     * otherwise
      */
-    protected boolean isEmpty(){
+    protected boolean isEmpty() {
         return this.size() == 0;
     }
 
@@ -101,14 +116,15 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
 
     /**
      * returns a list of all the entries in the Btree, ordered by key
+     *
      * @return
      */
     protected ArrayList<BTreeImpl.Entry> getOrderedEntries() {
         BTreeImpl.Node current = this.leftMostExternalNode;
         ArrayList<BTreeImpl.Entry> entries = new ArrayList<>();
-        while(current != null) {
-            for(BTreeImpl.Entry e : current.getEntries()) {
-                if(e.val != null) {
+        while (current != null) {
+            for (BTreeImpl.Entry e : current.getEntries()) {
+                if (e.val != null) {
                     entries.add(e);
                 }
             }
@@ -119,9 +135,9 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
 
     protected BTreeImpl.Entry getMinEntry() {
         BTreeImpl.Node current = this.leftMostExternalNode;
-        while(current != null) {
-            for(BTreeImpl.Entry e : current.getEntries()) {
-                if(e.val != null) {
+        while (current != null) {
+            for (BTreeImpl.Entry e : current.getEntries()) {
+                if (e.val != null) {
                     return e;
                 }
             }
@@ -131,7 +147,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
 
     protected BTreeImpl.Entry getMaxEntry() {
         ArrayList<BTreeImpl.Entry> entries = this.getOrderedEntries();
-        return entries.get(entries.size()-1);
+        return entries.get(entries.size() - 1);
     }
 
 
@@ -146,16 +162,16 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
      * @throws IllegalArgumentException if {@code key} is {@code null}
      */
     public Value put(Key key, Value val) {
-        try {
+       /* try {
             this.moveToDisk(key);
         }catch(Exception e){
-        }
+        }*/
         if (key == null) {
             throw new IllegalArgumentException("argument key to put() is null");
         }
         //if the key already exists in the b-tree, simply replace the value
         BTreeImpl.Entry alreadyThere = this.get(this.root, key, this.height);
-        if(alreadyThere != null) {
+        if (alreadyThere != null) {
             Value oldValue = get(key);
             alreadyThere.val = val;
             return oldValue;
@@ -179,7 +195,6 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
     }
 
     /**
-     *
      * @param currentNode
      * @param key
      * @param val
@@ -247,6 +262,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
 
     /**
      * split node in half
+     *
      * @param currentNode
      * @return new node
      */
@@ -273,6 +289,7 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
     private static boolean less(Comparable k1, Comparable k2) {
         return k1.compareTo(k2) < 0;
     }
+
     //might not need??!!?!?!?!?!?!?!?!?!?!!
     private static boolean isEqual(Comparable k1, Comparable k2) {
         return k1.compareTo(k2) == 0;
@@ -284,25 +301,30 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
      *
      * @param key the key
      * @return the value associated with the given key if the key is in the
-     *         symbol table and {@code null} if the key is not in the symbol
-     *         table
+     * symbol table and {@code null} if the key is not in the symbol
+     * table
      * @throws IllegalArgumentException if {@code key} is {@code null}
      */
     public Value get(Key key) {
         if (key == null) {
             throw new IllegalArgumentException("argument to get() is null");
         }
-        try{
-            DocumentImpl doc = (DocumentImpl) this.manager.deserialize((URI)key);
-            this.put(key, (Value)doc);
-            return (Value)doc;
-        }catch (Exception e) {
+        if (this.setOfSerializedValues.contains(key)) {
+            try {
+                DocumentImpl doc = (DocumentImpl) this.manager.deserialize((URI) key);
+                //this.put(key, (Value) doc);
+                this.setOfSerializedValues.remove(key);
+                return (Value) doc;
+            } catch (Exception e) {
+            }
+        } else {
             BTreeImpl.Entry entry = this.get(this.root, key, this.height);
             if (entry != null) {
                 return (Value) entry.val;
             }
             return null;
         }
+        return null;
     }
 
     private BTreeImpl.Entry get(BTreeImpl.Node currentNode, Key key, int height) {
@@ -336,10 +358,17 @@ public class BTreeImpl<Key extends Comparable<Key>, Value> implements BTree<Key,
 
     public void moveToDisk(Key k) throws Exception{
         this.manager.serialize((URI)k, (Document) this.get(k));
+        this.setOfSerializedValues.add(k);
+        this.put(k, null);
     }
 
     public void setPersistenceManager(PersistenceManager<Key,Value> pm){
         this.manager = (DocumentPersistenceManager) pm;
     }
+
+    /*protected boolean isAboutToBeDesterialized(URI uri) throws IOException {
+        return this.setOfSerializedValues.contains(uri);
+    }*/
+
 
 }

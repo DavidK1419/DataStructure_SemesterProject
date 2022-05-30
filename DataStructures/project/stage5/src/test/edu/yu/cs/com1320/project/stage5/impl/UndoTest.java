@@ -39,7 +39,7 @@ public class UndoTest {
     }
 
     private DocumentStoreImpl createStoreAndPutAll() throws IOException {
-        DocumentStoreImpl dsi = new DocumentStoreImpl();
+        DocumentStoreImpl dsi = new DocumentStoreImpl(null);
         //doc1
         ByteArrayInputStream bas = new ByteArrayInputStream(this.txt1.getBytes());
         dsi.putDocument(bas,this.uri1, DocumentStore.DocumentFormat.TXT);

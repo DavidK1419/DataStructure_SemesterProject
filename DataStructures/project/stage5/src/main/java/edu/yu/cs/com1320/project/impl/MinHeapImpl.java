@@ -57,7 +57,11 @@ public class MinHeapImpl<E extends Comparable<E>> extends MinHeap<E> {
      * is elements[i] > elements[j]?
      */
     protected boolean isGreater(int i, int j) {
-        return this.elements[i].compareTo(this.elements[j]) > 0;
+        try{
+            return this.elements[i].compareTo(this.elements[j]) > 0;
+        }catch(NullPointerException e){
+            return false;
+        }
     }
 
     /**

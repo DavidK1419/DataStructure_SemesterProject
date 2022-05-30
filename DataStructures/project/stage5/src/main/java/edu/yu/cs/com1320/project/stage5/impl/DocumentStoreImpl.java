@@ -91,7 +91,7 @@ public class DocumentStoreImpl implements DocumentStore {
         byte[] bites = input.readAllBytes();
         if(format.ordinal() == 0){
             String bytesString = new String(bites, StandardCharsets.UTF_8);
-            DocumentImpl newTextDoc = new DocumentImpl(uri, bytesString, new HashMap());
+            DocumentImpl newTextDoc = new DocumentImpl(uri, bytesString, null);
 //            DocumentImpl newTextDoc = new DocumentImpl(uri, bytesString);
             if(isThereLimit){
                 try {
@@ -164,26 +164,71 @@ public class DocumentStoreImpl implements DocumentStore {
      * @return the given document
      */
     public Document getDocument(URI uri){
-        DocumentImpl doc = (DocumentImpl) this.bTreeImpl.get(uri);
-        if(isThereLimit){
+
+        DocumentImpl doc;
+        boolean orange = false;
+        try{
+            doc = (DocumentImpl) this.manager.deserialize(uri);
+            orange = true;
+        }catch(Exception e){
+            doc = (DocumentImpl) this.bTreeImpl.get(uri);
+        }
+        if(orange){
             try {
                 deleteFromMinHeap(doc);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        this.bTreeImpl.put(uri, doc);
+       /* Boolean isApple;
+        try {
+            if(this.bTreeImpl.isAboutToBeDesterialized(uri)){
+                isApple = true;
+            }else{
+                isApple = false;
+            }
+        } catch (Exception e) {
+            isApple = false;
+        }
+        DocumentImpl doc = (DocumentImpl) this.bTreeImpl.get(uri);
+        if(isThereLimit && isApple){
+            try {
+                deleteFromMinHeap(doc);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }*/
+
+        /*try {
+            if(manager.isAboutToBeDesterialized(uri) && isThereLimit) {
+                    try {
+                        doc = (DocumentImpl) this.bTreeImpl.get(uri);
+                        deleteFromMinHeap(doc);
+                        //this.bTreeImpl.put(uri, doc);
+                    } catch (Exception e) {
+                        doc = (DocumentImpl) this.bTreeImpl.get(uri);
+                        e.printStackTrace();
+                    }
+            }else{
+                doc = (DocumentImpl) this.bTreeImpl.get(uri);
+            }
+        } catch (IOException e) {
+            doc = (DocumentImpl) this.bTreeImpl.get(uri);
+            e.printStackTrace();
+        }
+        this.bTreeImpl.put(uri, doc);*/
         /*this.minHeap.insert(doc.getKey());
         Set<String> docsWords = doc.getWords();
         for(String words : docsWords){
             this.trie.put(words, doc.getKey());
         }*/
-        doc.setLastUseTime(System.nanoTime());
         try {
             minHeap.reHeapify(doc.getKey());
+            doc.setLastUseTime(System.nanoTime());
         }catch(NullPointerException e){
         }
-        Function<URI, Boolean> function = URI -> saveUndoDoc(doc, uri);
+        DocumentImpl finalDoc = doc;
+        Function<URI, Boolean> function = URI -> saveUndoDoc(finalDoc, uri);
         GenericCommand genericCommand  = new GenericCommand(uri, function);
         this.commandStack.push(genericCommand);
         return doc;
@@ -234,6 +279,21 @@ public class DocumentStoreImpl implements DocumentStore {
         currentAmountOfDocs--;
     }
 
+    private void clearBytesFromMinHeap2fordeleting(URI uri) throws Exception {
+        bTreeImpl.get(uri).setLastUseTime(0);
+        this.minHeap.reHeapify(uri);
+        this.minHeap.remove();
+        int amountOfBytesToDelete = 0;
+        try{
+            amountOfBytesToDelete = bTreeImpl.get(uri).getDocumentTxt().getBytes().length;
+        }catch(NullPointerException e){
+            amountOfBytesToDelete = bTreeImpl.get(uri).getDocumentBinaryData().length;
+        }
+        currentAmountOfBytes -= amountOfBytesToDelete;
+        currentAmountOfDocs--;
+        //this.bTreeImpl.put(uri, null);
+    }
+
     private void removeFromTrie(Document document){
         Set<String> setOfWords = document.getWords();
         for(String words : setOfWords){
@@ -250,12 +310,13 @@ public class DocumentStoreImpl implements DocumentStore {
             return false;
         }
         Document delDoc = getDocument(uri);
-        this.bTreeImpl.put(uri, null);
+        //this.bTreeImpl.put(uri, null);
         try {
-            clearBytesFromMinHeap(delDoc.getKey());
+            clearBytesFromMinHeap2fordeleting(delDoc.getKey());
         } catch (Exception e) {
             e.printStackTrace();
         }
+        this.bTreeImpl.put(uri, null);
         //removeFromTrie(delDoc);
         Function<URI, Boolean> nullDoc = URI -> saveUndoDoc((DocumentImpl) delDoc, uri);
         this.commandStack.push(new GenericCommand(uri, nullDoc));
@@ -322,9 +383,9 @@ public class DocumentStoreImpl implements DocumentStore {
      */
     public List<Document> search(String keyword){
         List<URI> listOfDocURIs = this.trie.getAllSorted(keyword.toLowerCase(), (URI document1, URI document2) ->{
-            if (this.bTreeImpl.get(document1).wordCount(keyword) > this.bTreeImpl.get(document2).wordCount(keyword)) {
+            if (this.getDocument(document1).wordCount(keyword) > this.getDocument(document2).wordCount(keyword)) {
                 return 1;
-            } else if (this.bTreeImpl.get(document1).wordCount(keyword) < this.bTreeImpl.get(document2).wordCount(keyword)) {
+            } else if (this.getDocument(document1).wordCount(keyword) < this.getDocument(document2).wordCount(keyword)) {
                 return -1;
             } else {
                 return 0;
@@ -334,7 +395,8 @@ public class DocumentStoreImpl implements DocumentStore {
         List<Document> listOfDocDs = new ArrayList<>();
         for(URI uri:listOfDocURIs){
             listOfDocDs.add(getDocument(uri));
-            this.bTreeImpl.get(uri).setLastUseTime(System.nanoTime());
+            this.getDocument(uri).setLastUseTime(System.nanoTime());
+            //this.bTreeImpl.get(uri).setLastUseTime(System.nanoTime());
             minHeap.reHeapify(uri);
         }
         return listOfDocDs;
@@ -397,7 +459,7 @@ public class DocumentStoreImpl implements DocumentStore {
         Set<URI> uriSet = new HashSet<>();
         for(Document d : search){
             try {
-                clearBytesFromMinHeap(d.getKey());
+                clearBytesFromMinHeap2fordeleting(d.getKey());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -438,10 +500,11 @@ public class DocumentStoreImpl implements DocumentStore {
         Set<URI> uriSet = new HashSet<>();
         for(Document d : listOfDelPrefix){
             try {
-                clearBytesFromMinHeap(d.getKey());
+                clearBytesFromMinHeap2fordeleting(d.getKey());
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            //this.bTreeImpl.put(d.getKey(), null);
             //clearBytesFromMinHeap(d);
             removeFromTrie(d);
             uriSet.add((d).getKey());
